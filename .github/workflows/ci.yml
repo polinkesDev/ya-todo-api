@@ -1,0 +1,49 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, sqlite, pdo_sqlite, tokenizer, ctype, json
+          coverage: none
+
+      - name: Copy .env for testing
+        run: |
+          cp .env.example .env
+          echo "APP_KEY=base64:2ZMjV6NE1qUWlKSE5KY2pVdWFXTmpaR1kzWmprMk5qUT0=" >> .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          echo "CACHE_DRIVER=array" >> .env
+          echo "SESSION_DRIVER=array" >> .env
+          echo "QUEUE_DRIVER=sync" >> .env
+
+      - name: Install dependencies
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate key
+        run: php artisan key:generate
+
+      - name: Run tests
+        run: vendor/bin/phpunit --testdox
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: tests/Feature/
