@@ -21,31 +21,33 @@ jobs:
           extensions: mbstring, xml, sqlite, pdo_sqlite, tokenizer, ctype, json
           coverage: none
 
-      - name: Copy .env for testing
-        run: |
-          cp .env.example .env.test
-          echo "APP_ENV=testing" >> .env.test
-          echo "APP_DEBUG=true" >> .env.test
-          echo "APP_KEY=base64:2ZMjV6NE1qUWlKSE5KY2pVdWFXTmpaR1kzWmprMk5qUT0=" >> .env.test
-          echo "DB_CONNECTION=sqlite" >> .env.test
-          echo "DB_DATABASE=:memory:" >> .env.test
-          echo "CACHE_DRIVER=array" >> .env.test
-          echo "SESSION_DRIVER=array" >> .env.test
-          echo "QUEUE_CONNECTION=sync" >> .env.test
-          echo "MAIL_MAILER=log" >> .env.test
-
       - name: Install dependencies
         run: |
           composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Generate key
-        run: php artisan key:generate --env=test
+      - name: Create .env.testing
+        run: |
+          cp .env.example .env.testing
+          echo "APP_ENV=testing" >> .env.testing
+          echo "APP_DEBUG=true" >> .env.testing
+          echo "DB_CONNECTION=sqlite" >> .env.testing
+          echo "DB_DATABASE=:memory:" >> .env.testing
+          echo "CACHE_DRIVER=array" >> .env.testing
+          echo "SESSION_DRIVER=array" >> .env.testing
+          echo "QUEUE_CONNECTION=sync" >> .env.testing
+          echo "MAIL_MAILER=log" >> .env.testing
 
-      - name: Run migrations
-        run: php artisan migrate --env=test --force
+      - name: Generate APP_KEY for testing
+        run: |
+          php artisan key:generate --env=testing --force
+
+      - name: Display .env.testing for debugging
+        run: cat .env.testing
 
       - name: Run tests
-        run: vendor/bin/phpunit --testdox --colors=always
+        run: |
+          php artisan migrate --env=testing --force
+          vendor/bin/phpunit --testdox --colors=always
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
